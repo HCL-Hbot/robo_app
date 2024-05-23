@@ -35,6 +35,9 @@
 build/
 cmake-build-debug/
 
+# External libraries
+whisper/
+
 # IDE folders
 .vscode/
 .idea/

@@ -49,7 +49,6 @@ RtpStreamer::RtpStreamer(const char *ip_addr, int port, uint32_t sampling_window
     }
 
     // Set properties for low latency
-    g_object_set(G_OBJECT(audio_src), "buffer-time", 10000, NULL); // Reduce buffer time to 10ms
     g_object_set(G_OBJECT(sink), "host", ip_addr, "port", port, NULL);
     g_object_set(G_OBJECT(queue), "max-size-time", 0, "max-size-buffers", 0, "max-size-bytes", 0, NULL);
     g_object_set(G_OBJECT(encoder), "bitrate", sampling_rate, "frame-size", 20, "audio-type", 2048, NULL); // 2048 is for "voip"
