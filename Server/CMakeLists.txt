@@ -21,5 +21,9 @@ FetchContent_MakeAvailable(whisper)
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 
-add_executable(main main.cpp common.cpp common-sdl.cpp)
-target_link_libraries(main rtp_receiver whisper  ${SDL2_LIBRARIES})
+add_library(audio_buffer ${CMAKE_CURRENT_LIST_DIR}/audio_buffer/audio_buffer.cpp)
+target_link_libraries(audio_buffer rtp_receiver)
+target_include_directories(audio_buffer PUBLIC ${CMAKE_CURRENT_LIST_DIR}/audio_buffer/)
+
+add_executable(main main.cpp common.cpp)
+target_link_libraries(main rtp_receiver whisper  audio_buffer ${SDL2_LIBRARIES})

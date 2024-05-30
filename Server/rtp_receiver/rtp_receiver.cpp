@@ -74,13 +74,6 @@ void RtpReceiver::start(SampleCallback callback) {
     // Store the callback
     sample_callback = callback;
 
-    // Start playing the pipeline
-    GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
-    if (ret == GST_STATE_CHANGE_FAILURE) {
-        g_printerr("Failed to start the GStreamer pipeline\n");
-        return;
-    }
-
     // Connect to the appsink signal
     g_signal_connect(sink, "new-sample", G_CALLBACK(+[](GstElement *sink, gpointer data) -> GstFlowReturn {
         RtpReceiver *receiver = static_cast<RtpReceiver*>(data);
@@ -91,7 +84,7 @@ void RtpReceiver::start(SampleCallback callback) {
             GstMapInfo info;
             if (gst_buffer_map(buffer, &info, GST_MAP_READ)) {
                 // Call the user-provided callback with the PCM 32-bit float samples
-                receiver->sample_callback(reinterpret_cast<const float*>(info.data), info.size);
+                receiver->sample_callback(info.data, info.size);
                 gst_buffer_unmap(buffer, &info);
             }
             gst_sample_unref(sample);
@@ -99,11 +92,29 @@ void RtpReceiver::start(SampleCallback callback) {
         }
         return GST_FLOW_ERROR;
     }), this);
-
-    // Run the main loop
-    g_main_loop_run(loop);
+   
 }
 
 void RtpReceiver::stop() {
     g_main_loop_quit(loop);
+}
+
+void RtpReceiver::pause() {
+    GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PAUSED);
+    if (ret == GST_STATE_CHANGE_FAILURE) {
+        g_printerr("Failed to pause the GStreamer pipeline\n");
+    } else {
+        g_print("Pipeline paused\n");
+    }
+}
+
+void RtpReceiver::resume() {
+    GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
+    if (ret == GST_STATE_CHANGE_FAILURE) {
+        g_printerr("Failed to resume the GStreamer pipeline\n");
+    } else {
+        g_print("Pipeline resumed\n");
+    }
+        // Run the main loop
+    // g_main_loop_run(loop);
 }

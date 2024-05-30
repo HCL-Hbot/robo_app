@@ -5,11 +5,13 @@
 
 class RtpReceiver {
 public:
-    using SampleCallback = std::function<void(const float* data, size_t size)>;
+    using SampleCallback = std::function<void(guint8* data, int len)>;
     RtpReceiver(int port);
     ~RtpReceiver();
-  void start(SampleCallback callback);
+    void start(SampleCallback callback);
     void stop();
+    void pause();
+    void resume();
 
 private:
     GstElement *pipeline, *udpsrc, *rtpdepay, *decoder, *convert, *resample, *capsfilter, *sink;
