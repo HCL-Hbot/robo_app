@@ -16,6 +16,7 @@
 #include <iostream>
 #include <whisper_helper.hpp>
 #include <llama_wrapper.hpp>
+#include <whisper_wrapper.hpp>
 
 const uint32_t mqtt_server_port = 1883;
 const std::string mqtt_server_ip = "";
@@ -30,18 +31,8 @@ int main(int argc, char **argv)
 {
     whisper_params params;
 
-    struct whisper_context_params cparams = whisper_context_default_params();
+    whisper_wrapper whisper_inst(params);
 
-    cparams.use_gpu = params.use_gpu;
-    cparams.flash_attn = params.flash_attn;
-
-    struct whisper_context *ctx_wsp = whisper_init_from_file_with_params(params.model_wsp.c_str(), cparams);
-    if (!ctx_wsp)
-    {
-        fprintf(stderr, "No whisper.cpp model specified. Please provide using -mw <modelfile>\n");
-        return 1;
-    }
-    
     llama_wrapper llama_inst(params);
     int port = 5004;
     std::shared_ptr<RtpReceiver> Receiver = std::make_shared<RtpReceiver>(port);
@@ -55,17 +46,10 @@ int main(int argc, char **argv)
     audio.resume();
 
     bool is_running = true;
-    bool force_speak = false;
-
-    float prob0 = 0.0f;
-
-    const std::string chat_symb = ":";
 
     std::vector<float> pcmf32_cur;
-    std::vector<float> pcmf32_prompt;
 
-    const std::string prompt_whisper = ::replace(k_prompt_whisper, "{1}", params.bot_name);
-
+    whisper_inst.init();
     // init session
     llama_inst.init();
 
@@ -95,6 +79,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    bool force_speak = false;
     bool prev_active_audio = false;
     std::chrono::steady_clock::time_point listening_start_time;
 
@@ -151,57 +136,7 @@ int main(int argc, char **argv)
                 }
                 audio.get(params.voice_ms, pcmf32_cur);
 
-                std::string all_heard;
-
-                if (!force_speak)
-                {
-                    all_heard = ::trim(::transcribe(ctx_wsp, params, pcmf32_cur, prompt_whisper, prob0, t_ms));
-                }
-
-                const auto words = get_words(all_heard);
-
-                std::string wake_cmd_heard;
-                std::string text_heard;
-
-                if (words.size() > 0)
-                {
-                    prev_active_audio = false;
-                }
-
-                for (int i = 0; i < (int)words.size(); ++i)
-                {
-                    text_heard += words[i] + " ";
-                }
-
-                // check if audio starts with the wake-up command if enabled
-
-                // optionally give audio feedback that the current text is being processed
-                if (!params.heard_ok.empty())
-                {
-                    speak_with_file(params.speak, params.heard_ok, params.speak_file, 2);
-                }
-
-                // remove text between brackets using regex
-                {
-                    std::regex re("\\[.*?\\]");
-                    text_heard = std::regex_replace(text_heard, re, "");
-                }
-
-                // remove text between brackets using regex
-                {
-                    std::regex re("\\(.*?\\)");
-                    text_heard = std::regex_replace(text_heard, re, "");
-                }
-
-                // remove all characters, except for letters, numbers, punctuation and ':', '\'', '-', ' '
-                text_heard = std::regex_replace(text_heard, std::regex("[^a-zA-Z0-9\\.,\\?!\\s\\:\\'\\-]"), "");
-
-                // take first line
-                text_heard = text_heard.substr(0, text_heard.find_first_of('\n'));
-
-                // remove leading and trailing whitespace
-                text_heard = std::regex_replace(text_heard, std::regex("^\\s+"), "");
-                text_heard = std::regex_replace(text_heard, std::regex("\\s+$"), "");
+                std::string text_heard = whisper_inst.do_inference(pcmf32_cur, t_ms, prev_active_audio);
 
                 force_speak = false;
 
@@ -213,7 +148,7 @@ int main(int argc, char **argv)
                 fprintf(stdout, "%s%s%s", "\033[1m", text_heard.c_str(), "\033[0m");
                 fflush(stdout);
 
-                std::string text_to_speak = llama_inst.do_inference(text_heard, t_ms);
+                std::string text_to_speak = llama_inst.do_inference(text_heard);
 
                 speak_with_file(params.speak, text_to_speak, params.speak_file, 2);
 
@@ -223,9 +158,6 @@ int main(int argc, char **argv)
     }
 
     audio.pause();
-
-    whisper_print_timings(ctx_wsp);
-    whisper_free(ctx_wsp);
 
     mosquitto_disconnect(mosq);
     mosquitto_destroy(mosq);

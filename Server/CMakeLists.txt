@@ -18,6 +18,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(whisper)
 
+
+
 add_definitions("-DGGML_USE_CUDA")
 
 find_package(PkgConfig REQUIRED)

@@ -141,7 +141,7 @@
         };
     }
 
-    std::string llama_wrapper::do_inference(std::string text_heard, int64_t &t_ms)
+    std::string llama_wrapper::do_inference(std::string text_heard)
     {
         const std::vector<llama_token> tokens = llama_tokenize(m_ctx, text_heard.c_str(), false);
 

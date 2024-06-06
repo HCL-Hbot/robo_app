@@ -34,7 +34,7 @@ public:
 
     void init();
 
-    std::string do_inference(std::string text_heard, int64_t &t_ms);
+    std::string do_inference(std::string text_heard);
 
     ~llama_wrapper()
     {
