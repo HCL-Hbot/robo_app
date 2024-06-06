@@ -42,3 +42,5 @@ whisper/
 .vscode/
 .idea/
 models/
+
+piper/

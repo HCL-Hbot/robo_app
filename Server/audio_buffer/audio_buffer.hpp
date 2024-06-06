@@ -26,7 +26,7 @@ public:
 
 //     // callback to be called by gstreamer
 
-
+    bool active();
     // get audio data from the circular buffer
     void get(int ms, std::vector<float> & audio);
 
@@ -36,6 +36,7 @@ private:
     int m_sample_rate = 0;
     void callback(guint8 *data, int len);
     std::atomic_bool m_running;
+    std::atomic_bool m_active;
     std::mutex       m_mutex;
 
     std::shared_ptr<RtpReceiver> _recv_inst;

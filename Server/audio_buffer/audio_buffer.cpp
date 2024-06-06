@@ -18,6 +18,7 @@ audio_async::~audio_async() {
 
 // callback to be called by SDL
 void audio_async::callback(guint8 *data, int len) {
+    m_active = true;
     size_t n_samples = len / sizeof(float);
 
     if (n_samples > m_audio.size()) {
@@ -46,6 +47,11 @@ void audio_async::callback(guint8 *data, int len) {
             m_audio_len = std::min(m_audio_len + n_samples, m_audio.size());
         }
     }
+}
+
+
+bool audio_async::active() {
+    return m_active;
 }
 
 bool audio_async::init() {
@@ -103,6 +109,7 @@ bool audio_async::clear() {
 
 
 void audio_async::get(int ms, std::vector<float> & result) {
+    m_active = false;
     if (!m_running) {
         fprintf(stderr, "%s: not running!\n", __func__);
         return;

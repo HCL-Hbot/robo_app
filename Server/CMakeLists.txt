@@ -6,8 +6,9 @@ include(FetchContent)
 
 add_subdirectory(rtp_receiver)
 
-set(WHISPER_CUDA 1)
-set(LLAMA_CUDA 1)
+set(WHISPER_CUDA ON)
+
+set(LLAMA_CUDA ON)
 
 FetchContent_Declare(
     whisper
@@ -17,6 +18,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(whisper)
 
+add_definitions("-DGGML_USE_CUDA")
+
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(MOSQUITTO REQUIRED libmosquitto)
+
+include_directories(${MOSQUITTO_INCLUDE_DIRS})
+link_directories(${MOSQUITTO_LIBRARY_DIRS})
 # add_library(whisper_alt ${CMAKE_CURRENT_LIST_DIR}/whisper_alt/whisper.cpp)
 # target_link_libraries(whisper_alt PUBLIC llama)
 # target_include_directories(whisper_alt PUBLIC ${CMAKE_CURRENT_LIST_DIR}/whisper_alt)
@@ -38,7 +47,7 @@ target_link_libraries(llama whisper)
 
 
 add_executable(main main.cpp common.cpp)
-target_link_libraries(main PUBLIC rtp_receiver audio_buffer ${SDL2_LIBRARIES})
+target_link_libraries(main PUBLIC rtp_receiver audio_buffer ${SDL2_LIBRARIES} ${MOSQUITTO_LIBRARIES})
 target_link_libraries(main PRIVATE llama)
 target_link_libraries(main PRIVATE whisper)
 target_include_directories(main PUBLIC ".")
