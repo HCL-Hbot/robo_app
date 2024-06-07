@@ -7,11 +7,11 @@
 class whisper_wrapper
 {
 public:
-    whisper_wrapper(whisper_params params);
+    whisper_wrapper(model_params params);
 
     void init(bool force_speak = false);
 
-    std::string do_inference(std::vector<float> &pcmf_samples, int64_t &t_ms);
+    std::string do_inference(std::vector<float> &pcmf_samples);
 
     ~whisper_wrapper()
     {
@@ -20,8 +20,11 @@ public:
     }
 
 private:
+    /* This is needed to keep track of inference timing! Although not strictly necessary it helps with performance tuning! */
+    int64_t m_t_ms = 0;
+    
     whisper_context *m_ctx;
-    whisper_params m_params;
+    model_params m_params;
     std::vector<float> m_pcmf32_prompt;
     std::string m_prompt_whisper;
     const std::string m_chat_symb = ":";

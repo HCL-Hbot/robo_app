@@ -7,45 +7,11 @@
 #include <thread>
 #include <vector>
 #include <sstream>
-
-// command-line parameters
-struct whisper_params {
-    int32_t n_threads  = std::min(4, (int32_t) std::thread::hardware_concurrency());
-    int32_t voice_ms   = 10000;
-    int32_t capture_id = -1;
-    int32_t max_tokens = 32;
-    int32_t audio_ctx  = 0;
-    int32_t n_gpu_layers = 999;
-
-    float vad_thold  = 0.6f;
-    float freq_thold = 100.0f;
-
-    bool speed_up       = false;
-    bool translate      = false;
-    bool print_special  = false;
-    bool print_energy   = false;
-    bool no_timestamps  = true;
-    bool verbose_prompt = false;
-    bool use_gpu        = true;
-    bool flash_attn     = false;
-
-    std::string person      = "Georgi";
-    std::string bot_name    = "LLaMA";
-    std::string wake_cmd    = "";
-    std::string heard_ok    = "";
-    std::string language    = "nl";
-    std::string model_wsp   = "../models/ggml-medium.bin";
-    std::string model_llama = "../models/GEITje-7B-chat-v2.gguf";
-    std::string speak       = "./../speak";
-    std::string speak_file  = "./../to_speak";
-    std::string prompt      = "";
-    std::string fname_out;
-    std::string path_session = "";       // path to file for saving/loading model eval state
-};
+#include <settings.hpp>
 
 std::string transcribe(
         whisper_context * ctx,
-        const whisper_params & params,
+        const model_params & params,
         const std::vector<float> & pcmf32,
         const std::string prompt_text,
         float & prob,

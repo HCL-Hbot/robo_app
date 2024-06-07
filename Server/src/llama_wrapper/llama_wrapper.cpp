@@ -1,7 +1,7 @@
     #include <llama_wrapper.hpp>
     
-    
-    llama_wrapper::llama_wrapper(whisper_params params)
+
+    llama_wrapper::llama_wrapper(model_params params)
     {
         m_params = params;
         llama_backend_init();

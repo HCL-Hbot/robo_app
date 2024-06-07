@@ -51,7 +51,7 @@ std::string llama_token_to_piece(const struct llama_context * ctx, llama_token t
     return std::string(result.data(), result.size());
 }
 
-std::string construct_initial_prompt_for_llama(whisper_params &params){
+std::string construct_initial_prompt_for_llama(model_params &params){
     const std::string chat_symb = ":";
 // construct the initial prompt for LLaMA inference
     std::string prompt_llama = params.prompt.empty() ? k_prompt_llama : params.prompt;

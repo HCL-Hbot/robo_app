@@ -9,6 +9,7 @@
 #include <thread>
 #include <ctime>
 #include <fstream>
+#include <SDL2/SDL_events.h>
 
 #define COMMON_SAMPLE_RATE 16000
 
@@ -309,3 +310,23 @@ bool is_file_exist(const char *fileName);
 
 // write text to file, and call system("command voice_id file")
 bool speak_with_file(const std::string & command, const std::string & text, const std::string & path, int voice_id);
+
+bool sdl_poll_events()
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
+    {
+        switch (event.type)
+        {
+        case SDL_QUIT:
+        {
+            return false;
+        }
+        break;
+        default:
+            break;
+        }
+    }
+
+    return true;
+}

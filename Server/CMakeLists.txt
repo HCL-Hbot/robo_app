@@ -46,11 +46,11 @@ add_library(common ${CMAKE_CURRENT_LIST_DIR}/src/common/common.cpp)
 target_include_directories(common PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/common)
 
 add_library(whisper_wrapper ${CMAKE_CURRENT_LIST_DIR}/src/whisper_wrapper/whisper_wrapper.cpp)
-target_include_directories(whisper_wrapper PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/whisper_wrapper)
+target_include_directories(whisper_wrapper PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/whisper_wrapper ${CMAKE_CURRENT_LIST_DIR}/src)
 target_link_libraries(whisper_wrapper whisper common)
 
 add_library(llama_wrapper ${CMAKE_CURRENT_LIST_DIR}/src/llama_wrapper/llama_wrapper.cpp)
-target_include_directories(llama_wrapper PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/llama_wrapper)
+target_include_directories(llama_wrapper PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/llama_wrapper ${CMAKE_CURRENT_LIST_DIR}/src)
 target_link_libraries(llama_wrapper whisper whisper_wrapper llama common)
 
 

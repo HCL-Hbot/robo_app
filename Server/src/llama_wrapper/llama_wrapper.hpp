@@ -5,32 +5,12 @@
 #include <common.h>
 #include "llama_helper.hpp"
 #include <string>
-#include <SDL2/SDL_events.h>
-
-bool sdl_poll_events()
-{
-    SDL_Event event;
-    while (SDL_PollEvent(&event))
-    {
-        switch (event.type)
-        {
-        case SDL_QUIT:
-        {
-            return false;
-        }
-        break;
-        default:
-            break;
-        }
-    }
-
-    return true;
-}
+#include <settings.hpp>
 
 class llama_wrapper
 {
 public:
-    llama_wrapper(whisper_params params);
+    llama_wrapper(model_params params);
 
     void init();
 
@@ -48,7 +28,7 @@ private:
 
     llama_context_params m_lcparams = llama_context_default_params();
     llama_model_params m_lmparams = llama_model_default_params();
-    whisper_params m_params;
+    model_params m_params;
 
     std::vector<llama_token> m_session_tokens;
     std::vector<std::string> m_antiprompts;

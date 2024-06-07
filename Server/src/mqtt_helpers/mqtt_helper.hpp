@@ -40,4 +40,11 @@ int mqtt_send_msg(mosquitto *mosq, const std::string &topic, const std::string &
     }
     return 0;
 }
+
+
+void clean_up_mqtt(mosquitto *mosq) {
+    mosquitto_disconnect(mosq);
+    mosquitto_destroy(mosq);
+    mosquitto_lib_cleanup();
+}
 #endif /* MQTT_HELPER_HPP */

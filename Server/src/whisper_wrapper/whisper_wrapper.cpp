@@ -3,7 +3,7 @@
 #include <common.h>
 #include <regex>
 
-whisper_wrapper::whisper_wrapper(whisper_params params)
+whisper_wrapper::whisper_wrapper(model_params params)
 {
     m_params = params;
     m_cparams.use_gpu = params.use_gpu;
@@ -21,12 +21,12 @@ void whisper_wrapper::init(bool force_speak)
     m_prompt_whisper = ::replace(k_prompt_whisper, "{1}", m_params.bot_name);
 }
 
-std::string whisper_wrapper::do_inference(std::vector<float> &pcmf_samples, int64_t &t_ms)
+std::string whisper_wrapper::do_inference(std::vector<float> &pcmf_samples)
 {
     std::string all_heard;
     if (!m_force_speak)
     {
-        all_heard = ::trim(::transcribe(m_ctx, m_params, pcmf_samples, m_prompt_whisper, m_prob0, t_ms));
+        all_heard = ::trim(::transcribe(m_ctx, m_params, pcmf_samples, m_prompt_whisper, m_prob0, m_t_ms));
     }
 
     const auto words = get_words(all_heard);
