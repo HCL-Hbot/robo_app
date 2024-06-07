@@ -23,10 +23,14 @@ static inline constexpr uint32_t mqtt_server_port = 1883;
 const std::string mqtt_server_ip = "";
 
 /*
+* MQTT Topic to publish/update status on
+*/
+const std::string mqtt_topic = "status/server";
+
+/*
 * Port of the RTP receiver
 */
 const int rtp_recv_port = 5004;
-
 
 /* 
 * Settings for the model inference, 

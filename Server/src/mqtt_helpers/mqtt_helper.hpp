@@ -3,11 +3,11 @@
 #include <string>
 #include <iostream>
 #include <mosquitto.h>
+#include <settings.hpp>
 
 const std::string mqtt_up_msg = "Server is ready!";
 const std::string mqtt_listening_msg = "Server is listening!";
 const std::string audio_timeout_msg = "Timeout!";
-const std::string mqtt_topic = "status/server";
 
 mosquitto *mqtt_init()
 {
