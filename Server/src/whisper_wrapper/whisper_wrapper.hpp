@@ -11,7 +11,7 @@ public:
 
     void init(bool force_speak = false);
 
-    std::string do_inference(std::vector<float> &pcmf_samples, int64_t &t_ms, bool &no_voice_detected);
+    std::string do_inference(std::vector<float> &pcmf_samples, int64_t &t_ms);
 
     ~whisper_wrapper()
     {

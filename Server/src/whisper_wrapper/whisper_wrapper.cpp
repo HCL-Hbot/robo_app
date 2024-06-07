@@ -21,7 +21,7 @@ void whisper_wrapper::init(bool force_speak)
     m_prompt_whisper = ::replace(k_prompt_whisper, "{1}", m_params.bot_name);
 }
 
-std::string whisper_wrapper::do_inference(std::vector<float> &pcmf_samples, int64_t &t_ms, bool &no_voice_detected)
+std::string whisper_wrapper::do_inference(std::vector<float> &pcmf_samples, int64_t &t_ms)
 {
     std::string all_heard;
     if (!m_force_speak)
@@ -34,24 +34,11 @@ std::string whisper_wrapper::do_inference(std::vector<float> &pcmf_samples, int6
     std::string wake_cmd_heard;
     std::string text_heard;
 
-    if (words.size() > 0)
-    {
-        no_voice_detected = false;
-    }
-
     for (int i = 0; i < (int)words.size(); ++i)
     {
         text_heard += words[i] + " ";
     }
-
-    // check if audio starts with the wake-up command if enabled
-
-    // optionally give audio feedback that the current text is being processed
-    if (!m_params.heard_ok.empty())
-    {
-        speak_with_file(m_params.speak, m_params.heard_ok, m_params.speak_file, 2);
-    }
-
+    
     // remove text between brackets using regex
     {
         std::regex re("\\[.*?\\]");
