@@ -9,15 +9,18 @@
 #include <rtp_streamer.hpp>
 #include <atomic>
 #include <mosquitto.h>
+#include "model/model.h"
 
+#ifdef RASPBERRY_PI
+const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine_rpi4.so";
+#else
 const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine.so";
-const char *api_key = "***REMOVED***";
-const char *model_path = "../wake_word_lib/porcupine_params.pv";
-const char *keyword_path = "../wake_word_lib/model/hey_quiri_x86_64.ppn";
+#endif
+
 
 std::atomic_bool stop_listening = false;
 const uint32_t mqtt_server_port = 1883;
-const std::string mqtt_server_ip = "100.72.27.109";
+const std::string mqtt_server_ip = "";
 const std::string mqtt_topic = "status/server";
 
 void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message) {
