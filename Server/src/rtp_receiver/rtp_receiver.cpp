@@ -115,6 +115,4 @@ void RtpReceiver::resume() {
     } else {
         g_print("Pipeline resumed\n");
     }
-        // Run the main loop
-    // g_main_loop_run(loop);
 }

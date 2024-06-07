@@ -6,6 +6,10 @@
 #include <thread>
 #include <algorithm>
 
+
+/* Time to wait for audio responses coming in*/
+const float timeout_time = 10.0f;
+
 /* 
 * Size of the circular audio buffer in milliseconds
 * Default is 30 seconds, change if needed 

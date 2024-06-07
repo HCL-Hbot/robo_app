@@ -18,19 +18,6 @@ extern "C" {
 #endif
 #include <stddef.h>
 
-// typedef struct {
-// int frame_length;
-// pv_recorder_t* pv_recorder;
-// }pv_recorder_handle_t;
-
-// int init_wake_word_lib(const char *library_path, const char *api_key, const char *model_path, const char *keyword_path);
-
-// pv_recorder_handle_t init_pv_recorder();
-
-// int detect_wakeword(int16_t *pcm, pv_recorder_t *recorder);
-
-// void clean_up_wake_word_lib();
-
 class wake_word_lib {
 public:
 wake_word_lib(int audio_device_id, const char *library_path, const char *api_key, const char *model_path, const char *keyword_path);

@@ -9,6 +9,20 @@
 #include <sstream>
 #include <settings.hpp>
 
+/**
+ * @brief Transcribe audio data using a Whisper model.
+ * 
+ * This function transcribes the provided PCM audio data using the specified Whisper model context
+ * and parameters. It returns the transcription result as a string.
+ * 
+ * @param ctx Pointer to the Whisper model context.
+ * @param params The parameters for the model.
+ * @param pcmf32 The audio data to transcribe, as a vector of 32-bit floats.
+ * @param prompt_text The initial prompt text to use for transcription.
+ * @param prob Reference to a float to store the average probability of the transcription tokens.
+ * @param t_ms Reference to an int64_t to store the transcription time in milliseconds.
+ * @return std::string The transcription result.
+ */
 std::string transcribe(
         whisper_context * ctx,
         const model_params & params,
@@ -77,6 +91,15 @@ std::string transcribe(
     return result;
 }
 
+/**
+ * @brief Split a string into words.
+ * 
+ * This function splits the given text into words, using whitespace as the delimiter,
+ * and returns them as a vector of strings.
+ * 
+ * @param txt The input text to split into words.
+ * @return std::vector<std::string> A vector containing the words from the input text.
+ */
 std::vector<std::string> get_words(const std::string &txt) {
     std::vector<std::string> words;
 
@@ -89,6 +112,7 @@ std::vector<std::string> get_words(const std::string &txt) {
     return words;
 }
 
+/* Prompt to prepare whisper for current talking session */
 const std::string k_prompt_whisper = R"(A conversation with a person called {1}.)";
 
 #endif /* WHISPER_HELPER_HPP */

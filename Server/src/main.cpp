@@ -1,25 +1,11 @@
-#include "audio_buffer.hpp"
-#include "common.h"
-#include "whisper.h"
-#include "llama.h"
-#include <cassert>
-#include <cstdio>
-#include <fstream>
-#include <regex>
-#include <string>
-#include <thread>
-#include <vector>
-#include <regex>
-#include <sstream>
 #include <iostream>
 #include <settings.hpp>
+#include "common.h"
+#include "audio_buffer.hpp"
 #include <whisper_helper.hpp>
 #include <llama_wrapper.hpp>
 #include <whisper_wrapper.hpp>
 #include <mqtt_helpers/mqtt_helper.hpp>
-
-
-const float timeout_time = 4.5f;
 
 void send_timeout_msg(mosquitto *mosq, std::chrono::steady_clock::time_point &audio_start_time, bool audio_is_now_active, bool &audio_was_active)
 {
@@ -41,7 +27,7 @@ void send_timeout_msg(mosquitto *mosq, std::chrono::steady_clock::time_point &au
         auto now = std::chrono::steady_clock::now();
 
         std::chrono::duration<double> elapsed_seconds = now - audio_start_time;
-        
+
         std::cout << "Elapsed time: " << elapsed_seconds.count() << "\n";
         if (elapsed_seconds.count() > timeout_time)
         {
