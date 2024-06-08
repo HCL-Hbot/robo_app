@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(wake_word_lib)
 add_subdirectory(rtp_lib)
-add_subdirectory(com_cli_lib)
+add_subdirectory(nervousPico_connectivity)
 
 add_executable(
         porcupine_demo_mic
