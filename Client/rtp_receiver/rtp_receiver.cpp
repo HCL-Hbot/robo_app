@@ -26,7 +26,6 @@ RtpReceiver::RtpReceiver(int port) {
                                         "media", G_TYPE_STRING, "audio",
                                         "clock-rate", G_TYPE_INT, 22050,
                                         "encoding-name", G_TYPE_STRING, "L16",
-                                        "payload", G_TYPE_INT, 96,
                                         NULL);
     g_object_set(capsfilter, "caps", caps, NULL);
     gst_caps_unref(caps);
