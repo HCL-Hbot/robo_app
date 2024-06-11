@@ -42,3 +42,4 @@ cmake-build-debug/
 # External libraries
 wake_word_lib/pvrecorder
 model/
+Openwakeword.Cpp
