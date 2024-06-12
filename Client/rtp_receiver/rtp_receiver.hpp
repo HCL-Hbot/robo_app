@@ -2,7 +2,8 @@
 #define RTP_RECEIVER_HPP
 #include <gst/gst.h>
 #include <functional>
-
+#include <thread>
+#include <atomic>
 /**
  * @class RtpReceiver
  * @brief A class to handle receiving RTP streams.
@@ -28,6 +29,7 @@ public:
      */
     RtpReceiver(int port);
 
+    void init();
     /**
      * @brief Destroy the RtpReceiver object.
      */
@@ -49,6 +51,7 @@ public:
      */
     void resume();
 
+
 private:
     GstElement *pipeline;      ///< GStreamer pipeline element
     GstElement *udpsrc;        ///< GStreamer UDP source element
@@ -61,6 +64,10 @@ private:
     GstBus *bus;               ///< GStreamer bus
     GMainLoop *loop;           ///< GLib main loop
     SampleCallback sample_callback; ///< Callback function for received samples
+    std::thread mainLoopThread;
+    std::atomic<bool> receivingSamples;
+    static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data);
+     static GstPadProbeReturn pad_probe_callback(GstPad *pad, GstPadProbeInfo *info, gpointer user_data);
 };
 
 

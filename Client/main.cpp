@@ -42,29 +42,11 @@ void interrupt_handler(int _)
     is_interrupted = true;
 }
 
-// void start_mic_capture_stream(pv_recorder_t* rec_inst){
-//     fprintf(stdout, "Start recording...\n");
-//     pv_recorder_status_t recorder_status = pv_recorder_start(rec_inst);
-//     if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
-//         fprintf(stderr, "Failed to start device with %s.\n", pv_recorder_status_to_string(recorder_status));
-//         exit(1);
-//     }
-// }
-
-// void get_samples_from_mic(pv_recorder_t* rec_inst, int16_t* pcm) {
-//         pv_recorder_status_t recorder_status = pv_recorder_read(rec_inst, pcm);
-//         if (recorder_status != PV_RECORDER_STATUS_SUCCESS)
-//         {
-//             fprintf(stderr, "Failed to read with %s.\n", pv_recorder_status_to_string(recorder_status));
-//             exit(1);
-//         }
-// }
-
 int main(int argc, char *argv[])
 {
     signal(SIGINT, interrupt_handler);
     RtpStreamer rtp("100.72.27.109", 5004, 512, 48000);
-    // RtpReceiver rtprecv(5002);
+    RtpReceiver rtprecv(5002);
     mosquitto_lib_init();
 
     mosquitto *mosq = mosquitto_new(nullptr, true, nullptr);
@@ -87,7 +69,9 @@ int main(int argc, char *argv[])
     mosquitto_loop_start(mosq);
     openwakeword_detector wakeword_detect;
     wakeword_detect.init("../model/hey_robo.onnx");
-    
+    rtprecv.init();
+    rtprecv.resume();
+    bool mic_stream_paused = false;
     while (!is_interrupted)
     {
         bool wake_word_detected = wakeword_detect.detect_wakeword();
@@ -100,8 +84,18 @@ int main(int argc, char *argv[])
         if (stop_listening)
         {
             printf("Stop command received!\n");
-            // rtprecv.pause();
+            rtprecv.pause();
             stop_listening = false;
+        }
+        while(rtprecv.isReceivingSamples()) {
+            printf("Receiving samples! waiting!, %d\n", rtprecv.isReceivingSamples());
+            rtp.stop();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            mic_stream_paused = true;
+        }
+        if(mic_stream_paused) {
+            mic_stream_paused = false;
+            rtp.start();
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
