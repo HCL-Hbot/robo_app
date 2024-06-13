@@ -89,7 +89,6 @@ int main(int argc, char *argv[])
         if (wake_word_detected)
         {
             printf("Wake word detected!\n");
-            
             rtp.start();
 
         }
