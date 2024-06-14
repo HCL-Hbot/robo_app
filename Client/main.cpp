@@ -12,6 +12,9 @@
 #include <openwakeword.hpp>
 #include <chrono>
 #include <rtp_receiver.hpp>
+#include <boost/asio.hpp>
+#include <person_detector.hpp>
+#include <brainboard_host.hpp>
 
 // #ifdef RASPBERRY_PI
 // const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine_rpi4.so";
@@ -60,6 +63,7 @@ int main(int argc, char *argv[])
     RtpReceiver rtprecv(5002);
     mosquitto_lib_init();
     // loadEchoCancelModule();
+
     mosquitto *mosq = mosquitto_new(nullptr, true, nullptr);
     if (!mosq)
     {
@@ -78,6 +82,11 @@ int main(int argc, char *argv[])
 
     mosquitto_subscribe(mosq, nullptr, mqtt_topic.c_str(), 0);
     mosquitto_loop_start(mosq);
+
+    BRAINBOARD_HOST::DeviceController device_controller("/dev/ttyUSB0", 115200);
+
+    PersonDetector persondetect("127.0.0.1", "5678", device_controller);
+    persondetect.init();
     openwakeword_detector wakeword_detect;
     wakeword_detect.init("../model/hey_robo.onnx");
     rtprecv.init();
@@ -89,7 +98,6 @@ int main(int argc, char *argv[])
         {
             printf("Wake word detected!\n");
             rtp.start();
-
         }
         if (stop_listening)
         {
@@ -97,6 +105,14 @@ int main(int argc, char *argv[])
             rtp.stop();
             stop_listening = false;
         }
+
+        // if () {
+        //     std::string person = persondetect.detect_person();
+        //     if (person == "person") {
+        //         printf("Person detected!\n");
+        //         rtp.start();
+        //     }
+        // }
     }
     return 0;
 }

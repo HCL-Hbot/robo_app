@@ -16,6 +16,8 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(openwakeword)
 add_subdirectory(rtp_lib)
 add_subdirectory(rtp_receiver)
+add_subdirectory(person_detector)
+add_subdirectory(nervousPico_connectivity)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(MOSQUITTO REQUIRED libmosquitto)
@@ -27,4 +29,12 @@ add_executable(
         porcupine_demo_mic
         main.cpp)
 
-target_link_libraries(porcupine_demo_mic rtp_streamer rtp_receiver ${MOSQUITTO_LIBRARIES} openwakeword)
+target_link_libraries(porcupine_demo_mic 
+        rtp_streamer 
+        rtp_receiver 
+        ${MOSQUITTO_LIBRARIES} 
+        openwakeword 
+        person_detector
+        CLI_HOST
+)
+
