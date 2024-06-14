@@ -30,3 +30,18 @@
 *.exe
 *.out
 *.app
+
+# Build folders
+build/
+cmake-build-debug/
+
+# External libraries
+whisper/
+
+# IDE folders
+.vscode/
+.idea/
+models/
+
+piper/
+to_speak
