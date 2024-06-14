@@ -82,7 +82,6 @@ int main(int argc, char *argv[])
     wakeword_detect.init("../model/hey_robo.onnx");
     rtprecv.init();
     rtprecv.resume();
-    bool mic_stream_paused = false;
     while (!is_interrupted)
     {
         bool wake_word_detected = wakeword_detect.detect_wakeword();
@@ -98,14 +97,6 @@ int main(int argc, char *argv[])
             rtp.stop();
             stop_listening = false;
         }
-        // while(rtprecv.isReceivingSamples()) {
-        //     printf("Receiving samples! waiting!, %d\n", rtprecv.isReceivingSamples());
-        //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        //     mic_stream_paused = true;
-        // }
-        // if(mic_stream_paused) {
-        //     mic_stream_paused = false;
-        // }
     }
     return 0;
 }
