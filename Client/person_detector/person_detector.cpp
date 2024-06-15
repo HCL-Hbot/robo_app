@@ -44,12 +44,9 @@ void PersonDetector::update_eye_position() {
 
 void person_tracker_thread(const std::string& ip, const std::string& port, 
         std::atomic<int>& distance_detected, std::atomic<int>& x, std::atomic<int>& y, 
-        std::atomic_bool& person_detected, std::atomic_bool& stop_cond, PersonDetector* detector)  {
+        std::atomic_bool& person_detected, std::atomic_bool& stop_cond, PersonDetector* detector) {
     try {
-        // Create an I/O context
         boost::asio::io_context io_context;
-
-        // Resolve the server address and port
         boost::asio::ip::tcp::resolver resolver(io_context);
         boost::asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(ip, port);
 
@@ -61,6 +58,13 @@ void person_tracker_thread(const std::string& ip, const std::string& port,
 
         // Buffer to store the response
         boost::asio::streambuf buffer;
+
+        std::vector<int> x_values;
+        std::vector<int> y_values;
+        std::vector<int> distance_values;
+
+        const int max_samples = 10; // Number of samples to average
+        const std::chrono::milliseconds update_interval(100); // Update interval
 
         while (!stop_cond) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -76,27 +80,61 @@ void person_tracker_thread(const std::string& ip, const std::string& port,
 
             // Process the line (either JSON or a simple message)
             if (!line.empty()) {
-                try {
-                    json parsed = json::parse(line);
-                    if (parsed.contains("face detected") && parsed.contains("head position")) {
-                        if (parsed["face detected"].get<int>() == 1) {
-                            distance_detected = static_cast<int>(parsed["head position"][2].get<double>());
-                            x = static_cast<int>(parsed["head position"][0].get<double>());
-                            y = static_cast<int>(parsed["head position"][1].get<double>());
-                            person_detected = true;
-                            detector->update_eye_position(); // Update eye position
-                        } else {
-                            person_detected = false;
-                        }
+                if (parse_json(line, distance_detected, x, y, person_detected)) {
+                    x_values.push_back(x);
+                    y_values.push_back(y);
+                    distance_values.push_back(distance_detected);
+
+                    if (x_values.size() >= max_samples) {
+                        // Calculate the average
+                        int avg_x = std::accumulate(x_values.begin(), x_values.end(), 0) / max_samples;
+                        int avg_y = std::accumulate(y_values.begin(), y_values.end(), 0) / max_samples;
+                        int avg_distance = std::accumulate(distance_values.begin(), distance_values.end(), 0) / max_samples;
+
+                        // Update atomic variables
+                        x = avg_x;
+                        y = avg_y;
+                        distance_detected = avg_distance;
+                        person_detected = true;
+
+                        // Clear vectors for next batch
+                        x_values.clear();
+                        y_values.clear();
+                        distance_values.clear();
+
+                        // Update eye position
+                        detector->update_eye_position();
                     }
-                } catch (json::parse_error& e) {
-                    std::cerr << "Parse error: " << e.what() << " - Message: " << line << std::endl;
                 }
             }
+
+            // Throttle the loop to control update frequency
+            std::this_thread::sleep_for(update_interval);
         }
     } catch (std::exception &e) {
         std::cerr << "Exception: " << e.what() << "\n";
     }
+}
+
+const bool parse_json(const std::string& line, std::atomic<int>& distance_detected, 
+    std::atomic<int>& x, std::atomic<int>& y, std::atomic_bool& person_detected) {
+    try {
+        json parsed = json::parse(line);
+        if (parsed.contains("face detected") && parsed.contains("head position")) {
+            if (parsed["face detected"].get<int>() == 1) {
+                distance_detected = static_cast<int>(parsed["head position"][2].get<double>());
+                x = static_cast<int>(parsed["head position"][0].get<double>());
+                y = static_cast<int>(parsed["head position"][1].get<double>());
+                person_detected = true;
+                return true;
+            } else {
+                person_detected = false;
+            }
+        }
+    } catch (json::parse_error& e) {
+        std::cerr << "Parse error: " << e.what() << " - Message: " << line << std::endl;
+    }
+    return false;
 }
 
 const uint8_t PersonDetector::map_value(int value, int from_low, int from_high, int to_low, int to_high) {

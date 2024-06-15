@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+/* NOTE: This is a quick reference of BrainBoard, the things that are commented are things which are not present in the 
+FW API. Also not everything is tested yet...  */
 namespace BRAINBOARD_HOST {
 
 /* EYES REFS: */
