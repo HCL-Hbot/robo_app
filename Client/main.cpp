@@ -16,6 +16,11 @@
 #include <person_detector.hpp>
 #include <brainboard_host.hpp>
 
+/* Local Prototypes */
+void interrupt_handler(int _);
+void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message);
+void loadEchoCancelModule();
+
 // #ifdef RASPBERRY_PI
 // const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine_rpi4.so";
 // #else
@@ -27,31 +32,6 @@ const uint32_t mqtt_server_port = 1883;
 const std::string mqtt_server_ip = "100.72.27.109";
 const std::string mqtt_topic = "status/server";
 static volatile bool is_interrupted = false;
-
-void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
-{
-    printf("Received message on topic %s: %s\n", message->topic, (char *)message->payload);
-    if (!strcmp((char *)message->payload, "Timeout!"))
-    {
-        printf("received Timeout!\n");
-        stop_listening = true;
-    }
-}
-
-void interrupt_handler(int _) {
-    (void)_;
-    is_interrupted = true;
-}
-
-void loadEchoCancelModule() {
-    int result = std::system("pactl load-module module-echo-cancel");
-    if (result != 0) {
-        std::cerr << "Failed to load module-echo-cancel." << std::endl;
-    } else {
-        std::cout << "module-echo-cancel loaded successfully." << std::endl;
-    }
-}
-
 
 int main(int argc, char *argv[]) {
     signal(SIGINT, interrupt_handler);
@@ -127,4 +107,27 @@ int main(int argc, char *argv[]) {
         // }
     }
     return 0;
+}
+
+/* Interrupt handler for disabling the sys */
+void interrupt_handler(int _) {
+    (void)_;
+    is_interrupted = true;
+}
+
+void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message) {
+    printf("Received message on topic %s: %s\n", message->topic, (char *)message->payload);
+    if (!strcmp((char *)message->payload, "Timeout!")) {
+        printf("received Timeout!\n");
+        stop_listening = true;
+    }
+}
+
+void loadEchoCancelModule() {
+    int result = std::system("pactl load-module module-echo-cancel");
+    if (result != 0) {
+        std::cerr << "Failed to load module-echo-cancel." << std::endl;
+    } else {
+        std::cout << "module-echo-cancel loaded successfully." << std::endl;
+    }
 }
