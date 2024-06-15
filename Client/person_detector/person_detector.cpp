@@ -7,17 +7,44 @@
 #include <thread>
 #include <boost/asio.hpp>
 #include <nlohmann/json.hpp>
+
 using json = nlohmann::json;
 
-void PersonDetector::update_eye_position() {
-    uint8_t eye_x = static_cast<uint8_t>(x_position.load());
-    uint8_t eye_y = static_cast<uint8_t>(y_position.load());
-    device_controller_.controlEyes(BRAINBOARD_HOST::EyeID::BOTH, eye_x, eye_y, BRAINBOARD_HOST::EyeAnimation::MOVE); // Adjust EyeID and EyeAnimation as needed
+PersonDetector::~PersonDetector() {
+    stop_cond = true;
+    _tcp_recv_thread.join();
 }
 
-void PersonDetector_thread(const std::string& ip, const std::string& port, 
-    std::atomic<int>& distance_detected, std::atomic<int>& x, std::atomic<int>& y, 
-    std::atomic_bool& person_detected, std::atomic_bool& stop_cond, PersonDetector* detector) {
+void PersonDetector::init() {
+    _tcp_recv_thread = std::thread(person_tracker_thread, host_, port_, 
+        std::ref(_distance), std::ref(x_position), std::ref(y_position), 
+        std::ref(person_detected), std::ref(stop_cond), this);
+}
+
+Person_t PersonDetector::record_person_position() {
+    if (person_detected) {
+        Person_t new_person_position{x_position, y_position, _distance};
+        return new_person_position;
+    }
+    return {0, 0, 0};
+}
+
+void PersonDetector::update_eye_position() {
+    int current_target_x = x_position.load();
+    int current_target_y = y_position.load();
+
+    if (current_target_x > 430) {
+        device_controller_.controlEyes(BRAINBOARD_HOST::EyeID::BOTH, 80, 0, BRAINBOARD_HOST::EyeAnimation::MOVE);
+    } else if (current_target_x < 210) {
+        device_controller_.controlEyes(BRAINBOARD_HOST::EyeID::BOTH, -80, 0, BRAINBOARD_HOST::EyeAnimation::MOVE);
+    } else {
+        device_controller_.controlEyes(BRAINBOARD_HOST::EyeID::BOTH, 0, 0, BRAINBOARD_HOST::EyeAnimation::MOVE);
+    }
+}
+
+void person_tracker_thread(const std::string& ip, const std::string& port, 
+        std::atomic<int>& distance_detected, std::atomic<int>& x, std::atomic<int>& y, 
+        std::atomic_bool& person_detected, std::atomic_bool& stop_cond, PersonDetector* detector)  {
     try {
         // Create an I/O context
         boost::asio::io_context io_context;
@@ -35,11 +62,8 @@ void PersonDetector_thread(const std::string& ip, const std::string& port,
         // Buffer to store the response
         boost::asio::streambuf buffer;
 
-        // Main loop to read from the socket
         while (!stop_cond) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
-            // Read a line from the socket
             boost::asio::read_until(socket, buffer, '\n');
 
             // Convert the streambuf into a string
@@ -75,25 +99,6 @@ void PersonDetector_thread(const std::string& ip, const std::string& port,
     }
 }
 
-uint8_t PersonDetector::map_value(int value, int from_low, int from_high, int to_low, int to_high) {
+const uint8_t PersonDetector::map_value(int value, int from_low, int from_high, int to_low, int to_high) {
     return static_cast<uint8_t>((value - from_low) * (to_high - to_low) / (from_high - from_low) + to_low);
-}
-
-void PersonDetector::init() {
-    _tcp_recv_thread = std::thread(PersonDetector_thread, host_, port_, 
-        std::ref(_distance), std::ref(x_position), std::ref(y_position), 
-        std::ref(person_detected), std::ref(stop_cond), this);
-}
-
-Person_t PersonDetector::detect_person() {
-    if (person_detected) {
-        Person_t new_person_position{x_position, y_position, _distance};
-        return new_person_position;
-    }
-    return {0, 0, 0};
-}
-
-PersonDetector::~PersonDetector() {
-    stop_cond = true;
-    _tcp_recv_thread.join();
 }

@@ -8,7 +8,7 @@
 
 #include <brainboard_host.hpp>
 
-typedef struct{
+typedef struct {
     const int x;
     const int y;
     const int distance;
@@ -16,27 +16,38 @@ typedef struct{
 
 class PersonDetector {
 public:
-    PersonDetector(const std::string& host, const std::string& port, BRAINBOARD_HOST::DeviceController& ref) : host_(host), port_(port), device_controller_(ref) {
-    }
-    void init();
-
-    Person_t detect_person();
-
+    PersonDetector(const std::string& host, const std::string& port, BRAINBOARD_HOST::DeviceController& ref) 
+        : host_(host), port_(port), device_controller_(ref) = default;
     ~PersonDetector();
-    void update_eye_position();
 
-    uint8_t map_value(int value, int from_low, int from_high, int to_low, int to_high);
+    void init();
+    Person_t record_person_position();
+    void update_eye_position();
+    const uint8_t map_value(int value, int from_low, int from_high, int to_low, int to_high);
 
 private:
+/* Class Constants */
+    const static inline int MAX_X = 640; // Display max x in px.
+    const static inline int MAX_Y = 480; // Display max y in px.
+
+    const static inline int MAX_EYE_X = 120;
+    const static inline int MIN_EYE_X = -120;
+    
+    const static inline int MAX_EYE_Y = 120;
+    const static inline int MIN_EYE_Y = -120;
+
+/* Local TCP Socket Parameters: */
     std::string host_;
     std::string port_;
+
+/* Thread Handler Attributes: */
     std::atomic<int> _distance{0};
     std::atomic<int> x_position{0};
     std::atomic<int> y_position{0};
     std::atomic_bool person_detected{false};
     std::atomic_bool stop_cond{false};
-
     std::thread _tcp_recv_thread;
+
     BRAINBOARD_HOST::DeviceController& device_controller_;
 };
 
