@@ -48,20 +48,16 @@ void PersonDetector::update_eye_position() {
         x_movement = 20;
     } else if (current_target_x < 250) {
         x_movement = -20;
-    } else {
-        x_movement = 0;
     }
 
     // Y position thresholds
-    if (current_target_y < 65) {
+    if (current_target_y < 90) {
         y_movement = 20;
-    } else if (current_target_y > 300) {
+    } else if (current_target_y > 220) {
         y_movement = -20;
-    } else {
-        y_movement = 0;
     }
 
-    device_controller_.move_eye(BRAINBOARD_HOST::EyeID::BOTH, x_movement, y_movement);
+    device_controller_.move_eye(BRAINBOARD_HOST::EyeID::BOTH, x_movement, y_movement, 200);
 }
 
 void person_tracker_thread(const std::string& ip, const std::string& port, 
@@ -105,7 +101,7 @@ void person_tracker_thread(const std::string& ip, const std::string& port,
                     auto current_time = std::chrono::steady_clock::now();
                     auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
 
-                    if (elapsed_time >= 20) {
+                    if (elapsed_time >= 15) {
                         int avg_x = std::accumulate(x_values.begin(), x_values.end(), 0) / x_values.size();
                         int avg_y = std::accumulate(y_values.begin(), y_values.end(), 0) / y_values.size();
                         int avg_distance = std::accumulate(distance_values.begin(), distance_values.end(), 0) / distance_values.size();
