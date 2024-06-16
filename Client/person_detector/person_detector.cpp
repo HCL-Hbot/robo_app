@@ -10,6 +10,13 @@
 
 using json = nlohmann::json;
 
+/* LOCAL PROTOTYPES: */
+const bool parse_json(const std::string& line, std::atomic<int>& distance_detected, 
+    std::atomic<int>& x, std::atomic<int>& y, std::atomic_bool& person_detected);
+void person_tracker_thread(const std::string& ip, const std::string& port, 
+        std::atomic<int>& distance_detected, std::atomic<int>& x, std::atomic<int>& y, 
+        std::atomic_bool& person_detected, std::atomic_bool& stop_cond, PersonDetector* detector);
+
 PersonDetector::~PersonDetector() {
     stop_cond = true;
     _tcp_recv_thread.join();
@@ -59,15 +66,8 @@ void person_tracker_thread(const std::string& ip, const std::string& port,
         // Buffer to store the response
         boost::asio::streambuf buffer;
 
-        std::vector<int> x_values;
-        std::vector<int> y_values;
-        std::vector<int> distance_values;
-
-        const int max_samples = 10; // Number of samples to average
-        const std::chrono::milliseconds update_interval(100); // Update interval
-
         while (!stop_cond) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            // Read a single line from the socket
             boost::asio::read_until(socket, buffer, '\n');
 
             // Convert the streambuf into a string
@@ -78,38 +78,18 @@ void person_tracker_thread(const std::string& ip, const std::string& port,
             // Ensure the buffer is cleared after reading
             buffer.consume(buffer.size());
 
-            // Process the line (either JSON or a simple message)
-            if (!line.empty()) {
+            // Process the line if it is not empty or whitespace-only
+            if (!line.empty() && line.find_first_not_of(' ') != std::string::npos) {
                 if (parse_json(line, distance_detected, x, y, person_detected)) {
-                    x_values.push_back(x);
-                    y_values.push_back(y);
-                    distance_values.push_back(distance_detected);
-
-                    if (x_values.size() >= max_samples) {
-                        // Calculate the average
-                        int avg_x = std::accumulate(x_values.begin(), x_values.end(), 0) / max_samples;
-                        int avg_y = std::accumulate(y_values.begin(), y_values.end(), 0) / max_samples;
-                        int avg_distance = std::accumulate(distance_values.begin(), distance_values.end(), 0) / max_samples;
-
-                        // Update atomic variables
-                        x = avg_x;
-                        y = avg_y;
-                        distance_detected = avg_distance;
-                        person_detected = true;
-
-                        // Clear vectors for next batch
-                        x_values.clear();
-                        y_values.clear();
-                        distance_values.clear();
-
-                        // Update eye position
-                        detector->update_eye_position();
-                    }
+                    // Update eye position immediately
+                    detector->update_eye_position();
                 }
+            } else {
+                std::cerr << "Received an empty or whitespace-only line, ignoring.\n";
             }
 
             // Throttle the loop to control update frequency
-            std::this_thread::sleep_for(update_interval);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     } catch (std::exception &e) {
         std::cerr << "Exception: " << e.what() << "\n";

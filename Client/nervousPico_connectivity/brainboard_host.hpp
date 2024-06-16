@@ -26,6 +26,11 @@ public:
         handleEyeAnimation(eye_nr, anim);
     }
 
+    void blink(const EyeID eye_nr) {
+        std::ostringstream command;
+        handleEyeAnimation(eye_nr, EyeAnimation::BLINK_ANIM);
+    }
+
     void controlLedstrip(LedID strip_nr, int hue, int saturation, int value, LedstripCommandTypes anim, int duration = 1000) {
         int r, g, b;
         hsv_to_rgb(hue, saturation, value, r, g, b);
@@ -116,13 +121,13 @@ private:
         std::ostringstream command;
         switch (anim) {
             case EyeAnimation::BLINK_ANIM:
-                command << "DS102 " << static_cast<int>(eye_nr) << " 1\r\n";
+                command << "DS102 " << static_cast<int>(eye_nr) << " 500\r\n";
                 break;
             case EyeAnimation::CONFUSED_ANIM:
-                command << "DS103 " << static_cast<int>(eye_nr) << " 1\r\n";
+                command << "DS103 " << static_cast<int>(eye_nr) << " 500\r\n";
                 break;
             case EyeAnimation::THINKING_ANIM:
-                command << "DS104 " << static_cast<int>(eye_nr) << " 1\r\n";
+                command << "DS104 " << static_cast<int>(eye_nr) << " 500\r\n";
                 break;
             case EyeAnimation::MOVE:
                 std::cerr << "No Animation just move\r\n";

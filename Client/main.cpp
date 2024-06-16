@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 /* End of MQTT Setup */
 
 /* Person Tracking Subsystem: */
-    BRAINBOARD_HOST::DeviceController device_controller("/dev/ttyUSB0", 115200);
+    BRAINBOARD_HOST::DeviceController device_controller("/dev/ttyS0", 115200);
     PersonDetector persondetect("127.0.0.1", "5678", device_controller);
     persondetect.init();
 /* End of Person Tracking Subsystem: */
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
         if (elapsed_time > 1000 * 30) {
             // Every 30 sec Robo blinks.
             printf("1 second has passed.\n");
-            device_controller.controlEyes(BRAINBOARD_HOST::EyeID::BOTH, 0, 0, BRAINBOARD_HOST::EyeAnimation::BLINK);
+            device_controller.blink(BRAINBOARD_HOST::EyeID::BOTH);
             // Reset the start time
             start_time = current_time;
         }

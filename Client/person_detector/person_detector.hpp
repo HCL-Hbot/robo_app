@@ -17,7 +17,7 @@ typedef struct {
 class PersonDetector {
 public:
     PersonDetector(const std::string& host, const std::string& port, BRAINBOARD_HOST::DeviceController& ref) 
-        : host_(host), port_(port), device_controller_(ref) = default;
+        : host_(host), port_(port), device_controller_(ref) {}
     ~PersonDetector();
 
     void init();
