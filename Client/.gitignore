@@ -40,5 +40,4 @@ cmake-build-debug/
 .idea/
 
 # External libraries
-model/
 Openwakeword.Cpp/
