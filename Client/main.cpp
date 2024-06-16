@@ -92,19 +92,12 @@ int main(int argc, char *argv[]) {
 
         if (elapsed_time > 1000 * 30) {
             // Every 30 sec Robo blinks.
-            printf("1 second has passed.\n");
+            printf("30 second has passed.\n");
             device_controller.blink(BRAINBOARD_HOST::EyeID::BOTH);
             // Reset the start time
             start_time = current_time;
         }
 
-        // if () {
-        //     std::string person = persondetect.detect_person();
-        //     if (person == "person") {
-        //         printf("Person detected!\n");
-        //         rtp.start();
-        //     }
-        // }
     }
     return 0;
 }

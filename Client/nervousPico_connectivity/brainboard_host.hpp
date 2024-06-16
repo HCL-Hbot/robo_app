@@ -19,11 +19,17 @@ public:
         serial_port_.close();
     }
 
-    void controlEyes(const EyeID eye_nr, uint8_t x, uint8_t y, EyeAnimation anim, int duration = 1000) {
+    void controlEyes(const EyeID eye_nr, int x, int y, EyeAnimation anim, int duration = 1000) {
         std::ostringstream command;
-        command << "DS101 " << static_cast<int>(eye_nr) << " " << static_cast<int>(x) << " " << static_cast<int>(y) << " " << duration << "\r\n";
+        command << "DS101 " << static_cast<int>(eye_nr) << " " << (x) << " " << (y) << " " << duration << "\r\n";
         serial_port_.write(command.str());
         handleEyeAnimation(eye_nr, anim);
+    }
+
+    void move_eye(const EyeID eye_nr, int x, int y, int duration = 100) {
+        std::ostringstream command;
+        command << "DS101 " << static_cast<int>(eye_nr) << " " << (x) << " " << (y) << " " << duration << "\r\n";
+        serial_port_.write(command.str());
     }
 
     void blink(const EyeID eye_nr) {

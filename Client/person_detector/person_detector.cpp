@@ -40,13 +40,28 @@ void PersonDetector::update_eye_position() {
     int current_target_x = x_position.load();
     int current_target_y = y_position.load();
 
-    if (current_target_x > 430) {
-        device_controller_.controlEyes(BRAINBOARD_HOST::EyeID::BOTH, 80, 0, BRAINBOARD_HOST::EyeAnimation::MOVE);
-    } else if (current_target_x < 210) {
-        device_controller_.controlEyes(BRAINBOARD_HOST::EyeID::BOTH, -80, 0, BRAINBOARD_HOST::EyeAnimation::MOVE);
+    int x_movement = 0;
+    int y_movement = 0;
+
+    // X position thresholds
+    if (current_target_x > 400) {
+        x_movement = 20;
+    } else if (current_target_x < 250) {
+        x_movement = -20;
     } else {
-        device_controller_.controlEyes(BRAINBOARD_HOST::EyeID::BOTH, 0, 0, BRAINBOARD_HOST::EyeAnimation::MOVE);
+        x_movement = 0;
     }
+
+    // Y position thresholds
+    if (current_target_y < 65) {
+        y_movement = 20;
+    } else if (current_target_y > 300) {
+        y_movement = -20;
+    } else {
+        y_movement = 0;
+    }
+
+    device_controller_.move_eye(BRAINBOARD_HOST::EyeID::BOTH, x_movement, y_movement);
 }
 
 void person_tracker_thread(const std::string& ip, const std::string& port, 
@@ -66,35 +81,60 @@ void person_tracker_thread(const std::string& ip, const std::string& port,
         // Buffer to store the response
         boost::asio::streambuf buffer;
 
+        std::vector<int> x_values;
+        std::vector<int> y_values;
+        std::vector<int> distance_values;
+
+        auto start_time = std::chrono::steady_clock::now();
+
         while (!stop_cond) {
-            // Read a single line from the socket
             boost::asio::read_until(socket, buffer, '\n');
 
-            // Convert the streambuf into a string
             std::istream is(&buffer);
             std::string line;
             std::getline(is, line);
 
-            // Ensure the buffer is cleared after reading
             buffer.consume(buffer.size());
 
-            // Process the line if it is not empty or whitespace-only
             if (!line.empty() && line.find_first_not_of(' ') != std::string::npos) {
                 if (parse_json(line, distance_detected, x, y, person_detected)) {
-                    // Update eye position immediately
-                    detector->update_eye_position();
+                    x_values.push_back(x.load());
+                    y_values.push_back(y.load());
+                    distance_values.push_back(distance_detected.load());
+
+                    auto current_time = std::chrono::steady_clock::now();
+                    auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
+
+                    if (elapsed_time >= 20) {
+                        int avg_x = std::accumulate(x_values.begin(), x_values.end(), 0) / x_values.size();
+                        int avg_y = std::accumulate(y_values.begin(), y_values.end(), 0) / y_values.size();
+                        int avg_distance = std::accumulate(distance_values.begin(), distance_values.end(), 0) / distance_values.size();
+
+                        // Update vars
+                        x = avg_x;
+                        y = avg_y;
+                        distance_detected = avg_distance;
+
+                        // clear buffers
+                        x_values.clear();
+                        y_values.clear();
+                        distance_values.clear();
+
+                        detector->update_eye_position();
+                        // Reset the start time
+                        start_time = std::chrono::steady_clock::now();
+                    }
                 }
             } else {
                 std::cerr << "Received an empty or whitespace-only line, ignoring.\n";
             }
-
-            // Throttle the loop to control update frequency
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10)); // socket reading interval
         }
     } catch (std::exception &e) {
         std::cerr << "Exception: " << e.what() << "\n";
     }
 }
+
 
 const bool parse_json(const std::string& line, std::atomic<int>& distance_detected, 
     std::atomic<int>& x, std::atomic<int>& y, std::atomic_bool& person_detected) {
@@ -106,6 +146,7 @@ const bool parse_json(const std::string& line, std::atomic<int>& distance_detect
                 x = static_cast<int>(parsed["head position"][0].get<double>());
                 y = static_cast<int>(parsed["head position"][1].get<double>());
                 person_detected = true;
+                std::cout << "X: " << x << ", Y: " << y << std::endl;
                 return true;
             } else {
                 person_detected = false;

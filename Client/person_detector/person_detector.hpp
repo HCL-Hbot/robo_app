@@ -17,7 +17,9 @@ typedef struct {
 class PersonDetector {
 public:
     PersonDetector(const std::string& host, const std::string& port, BRAINBOARD_HOST::DeviceController& ref) 
-        : host_(host), port_(port), device_controller_(ref) {}
+        : host_(host), port_(port), device_controller_(ref) {
+            device_controller_.controlEyes(BRAINBOARD_HOST::EyeID::BOTH, 0, 0, BRAINBOARD_HOST::EyeAnimation::MOVE);
+        }
     ~PersonDetector();
 
     void init();
