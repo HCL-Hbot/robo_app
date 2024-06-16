@@ -61,6 +61,7 @@ private:
     GstElement *resample;      ///< GStreamer resample element
     GstElement *capsfilter;    ///< GStreamer caps filter element
     GstElement *sink;          ///< GStreamer sink element
+    GstElement *jitterbuffer;          ///< GStreamer sink element
     GstBus *bus;               ///< GStreamer bus
     GMainLoop *loop;           ///< GLib main loop
     SampleCallback sample_callback; ///< Callback function for received samples

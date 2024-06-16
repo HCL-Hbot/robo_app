@@ -11,6 +11,7 @@ RtpReceiver::RtpReceiver(int port) {
     udpsrc = gst_element_factory_make("udpsrc", "source");
     capsfilter = gst_element_factory_make("capsfilter", "capsfilter");
     rtpdepay = gst_element_factory_make("rtpL16depay", "depay");
+    jitterbuffer = gst_element_factory_make("rtpjitterbuffer", "jitterbuffer");
     convert = gst_element_factory_make("audioconvert", "convert");
     resample = gst_element_factory_make("audioresample", "resample");
     sink = gst_element_factory_make("pulsesink", "sink");
@@ -19,6 +20,7 @@ RtpReceiver::RtpReceiver(int port) {
         g_printerr("Failed to create elements.\n");
         return;
     }
+    g_object_set(jitterbuffer, "latency", 200, NULL);  // Adjust the latency as needed
 
     g_object_set(udpsrc, "port", port, NULL);
 
@@ -27,12 +29,11 @@ RtpReceiver::RtpReceiver(int port) {
                                         "clock-rate", G_TYPE_INT, (int)22050,
                                         "encoding-name", G_TYPE_STRING, "L16",
                                         "channels", G_TYPE_INT, (int)1,
-                                        "latency", G_TYPE_INT, 100,
                                         NULL);
     g_object_set(capsfilter, "caps", caps, NULL);
     gst_caps_unref(caps);
 
-    gst_bin_add_many(GST_BIN(pipeline), udpsrc, capsfilter, rtpdepay, convert, resample, sink, NULL);
+    gst_bin_add_many(GST_BIN(pipeline), udpsrc, jitterbuffer, capsfilter, rtpdepay, convert, resample, sink, NULL);
 
     if (!gst_element_link_many(udpsrc, capsfilter, rtpdepay, convert, resample, sink, NULL)) {
         g_printerr("Failed to link elements.\n");

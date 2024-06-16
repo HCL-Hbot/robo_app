@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 FetchContent_Declare(
         openwakeword
         GIT_REPOSITORY https://github.com/Hoog-V/Openwakeword.Cpp.git
-        GIT_TAG main
+        GIT_TAG with_async_audio
         SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/Openwakeword.cpp
 )
 
