@@ -2,7 +2,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-// #include "wake_word_lib_hooks.h"
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -13,11 +12,6 @@
 #include <chrono>
 #include <rtp_receiver.hpp>
 
-// #ifdef RASPBERRY_PI
-// const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine_rpi4.so";
-// #else
-// const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine.so";
-// #endif
 
 std::atomic_bool stop_listening = false;
 const uint32_t mqtt_server_port = 1883;
@@ -43,15 +37,6 @@ void interrupt_handler(int _)
     is_interrupted = true;
 }
 
-void loadEchoCancelModule() {
-    int result = std::system("pactl load-module module-echo-cancel");
-    if (result != 0) {
-        std::cerr << "Failed to load module-echo-cancel." << std::endl;
-    } else {
-        std::cout << "module-echo-cancel loaded successfully." << std::endl;
-    }
-}
-
 
 int main(int argc, char *argv[])
 {
@@ -59,7 +44,6 @@ int main(int argc, char *argv[])
     RtpStreamer rtp("100.72.27.109", 5004, 512, 48000);
     RtpReceiver rtprecv(5002);
     mosquitto_lib_init();
-    // loadEchoCancelModule();
     mosquitto *mosq = mosquitto_new(nullptr, true, nullptr);
     if (!mosq)
     {
@@ -98,14 +82,6 @@ int main(int argc, char *argv[])
             rtp.stop();
             stop_listening = false;
         }
-        // while(rtprecv.isReceivingSamples()) {
-        //     printf("Receiving samples! waiting!, %d\n", rtprecv.isReceivingSamples());
-        //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        //     mic_stream_paused = true;
-        // }
-        // if(mic_stream_paused) {
-        //     mic_stream_paused = false;
-        // }
     }
     return 0;
 }
