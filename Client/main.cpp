@@ -9,6 +9,7 @@
 #include <rtp_streamer.hpp>
 #include <atomic>
 #include <mosquitto.h>
+#include <async_audio_buffer.hpp>
 #include <openwakeword.hpp>
 #include <chrono>
 #include <rtp_receiver.hpp>
@@ -21,12 +22,6 @@ void interrupt_handler(int _);
 void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message);
 void loadEchoCancelModule();
 
-// #ifdef RASPBERRY_PI
-// const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine_rpi4.so";
-// #else
-// const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine.so";
-// #endif
-
 std::atomic_bool stop_listening = false;
 const uint32_t mqtt_server_port = 1883;
 const std::string mqtt_server_ip = "100.72.27.109";
@@ -37,7 +32,9 @@ int main(int argc, char *argv[]) {
     signal(SIGINT, interrupt_handler);
     RtpStreamer rtp("100.72.27.109", 5004, 512, 48000);
     RtpReceiver rtprecv(5002);
-    // loadEchoCancelModule();
+    /* Async audio capture for wakeword detection */
+    audio_async audio(30 * 1000);
+    audio.init(-1, 16000);
 
 /* MQTT Setup */
     const int keepalive = 60;
@@ -72,10 +69,16 @@ int main(int argc, char *argv[]) {
     rtprecv.resume();
 /* End of Audio Interaction Subsystem: */
 
+/* Local audio buffer for the wakeword detection */
+    std::vector<float> audio_samples(1024);
+
+    audio.resume();
+    audio.clear();
+
     // Start timer for Robo blinking:
     auto start_time = std::chrono::steady_clock::now(); 
-    while (! is_interrupted) {
-        bool wake_word_detected = wakeword_detect.detect_wakeword();
+    while (!is_interrupted) {
+        bool wake_word_detected = wakeword_detect.detect_wakeword(audio_samples);
         if (wake_word_detected) {
             printf("Wake word detected!\n");
             device_controller.setColor(BRAINBOARD_HOST::LedID::HEAD, BRAINBOARD_HOST::Color::WHITE);
@@ -113,14 +116,5 @@ void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_messag
     if (!strcmp((char *)message->payload, "Timeout!")) {
         printf("received Timeout!\n");
         stop_listening = true;
-    }
-}
-
-void loadEchoCancelModule() {
-    int result = std::system("pactl load-module module-echo-cancel");
-    if (result != 0) {
-        std::cerr << "Failed to load module-echo-cancel." << std::endl;
-    } else {
-        std::cout << "module-echo-cancel loaded successfully." << std::endl;
     }
 }
