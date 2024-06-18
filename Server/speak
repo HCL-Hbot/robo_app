@@ -2,5 +2,5 @@
 
 # Usage:
 #  speak <voice_id> <textfile>
-ip_client=""
-cat $2 | ../piper/piper --cuda --model "../models/nl_BE-nathalie-medium.onnx"  -f "../models/nl_BE-nathalie-medium.onnx.json" --output-raw | gst-launch-1.0 fdsrc ! queue ! audio/x-raw,format=S16LE,channels=1,rate=22050,layout=interleaved ! audioconvert ! rtpL16pay ! queue ! udpsink host=$ip_client port=5002 buffer-size=500000
+ip_client="127.0.0.1"
+cat $2 | ../piper/piper --model "../models/nl_BE-nathalie-medium.onnx"  -f "../models/nl_BE-nathalie-medium.onnx.json" --output-raw | gst-launch-1.0 fdsrc ! queue ! audio/x-raw,format=S16LE,channels=1,rate=22050,layout=interleaved ! audioconvert ! rtpL16pay ! queue ! udpsink host=$ip_client port=5002

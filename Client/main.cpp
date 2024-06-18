@@ -2,97 +2,52 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "wake_word_lib_hooks.h"
+// #include "wake_word_lib_hooks.h"
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <rtp_streamer.hpp>
 #include <atomic>
 #include <mosquitto.h>
-#include "model/model.h"
+#include <openwakeword.hpp>
+#include <chrono>
+#include <rtp_receiver.hpp>
+#include <boost/asio.hpp>
+#include <person_detector.hpp>
+#include <brainboard_host.hpp>
 
-#ifdef RASPBERRY_PI
-const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine_rpi4.so";
-#else
-const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine.so";
-#endif
+/* Local Prototypes */
+void interrupt_handler(int _);
+void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message);
+void loadEchoCancelModule();
 
+// #ifdef RASPBERRY_PI
+// const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine_rpi4.so";
+// #else
+// const char *library_path = "../wake_word_lib/porcupine/libpv_porcupine.so";
+// #endif
 
 std::atomic_bool stop_listening = false;
 const uint32_t mqtt_server_port = 1883;
-const std::string mqtt_server_ip = "";
+const std::string mqtt_server_ip = "100.72.27.109";
 const std::string mqtt_topic = "status/server";
-
-void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message) {
-    printf("Received message on topic %s: %s\n", message->topic, (char*) message->payload);
-    if(!strcmp((char*)message->payload, "Timeout!")) {
-        printf("received Timeout!\n");
-        stop_listening = true;
-    }
-}
-
 static volatile bool is_interrupted = false;
-
-void interrupt_handler(int _) {
-    (void) _;
-    is_interrupted = true;
-}
-
-void start_mic_capture_stream(pv_recorder_t* rec_inst){
-    fprintf(stdout, "Start recording...\n");
-    pv_recorder_status_t recorder_status = pv_recorder_start(rec_inst);
-    if (recorder_status != PV_RECORDER_STATUS_SUCCESS) {
-        fprintf(stderr, "Failed to start device with %s.\n", pv_recorder_status_to_string(recorder_status));
-        exit(1);
-    }
-}
-
-void get_samples_from_mic(pv_recorder_t* rec_inst, int16_t* pcm) {
-        pv_recorder_status_t recorder_status = pv_recorder_read(rec_inst, pcm);
-        if (recorder_status != PV_RECORDER_STATUS_SUCCESS)
-        {
-            fprintf(stderr, "Failed to read with %s.\n", pv_recorder_status_to_string(recorder_status));
-            exit(1);
-        }
-}
-
-void writePCMToFile(const std::string& filename, const int16_t* pcmData, size_t dataSize, bool append = false) {
-    std::ios_base::openmode mode = std::ios::binary;
-    if (append) {
-        mode |= std::ios::app;
-    } else {
-        mode |= std::ios::out;
-    }
-
-    std::ofstream outFile(filename, mode);  // Open file in binary mode, with append option if specified
-    if (!outFile) {
-        std::cerr << "Failed to open file for writing: " << filename << std::endl;
-        return;
-    }
-
-    // Write PCM data to file
-    outFile.write(reinterpret_cast<const char*>(pcmData), dataSize * sizeof(int16_t));
-    if (!outFile) {
-        std::cerr << "Failed to write data to file: " << filename << std::endl;
-    }
-
-    outFile.close();  // Close the file
-}
 
 int main(int argc, char *argv[]) {
     signal(SIGINT, interrupt_handler);
-    wake_word_lib wake_word_detector(-1, library_path, api_key, model_path, keyword_path);
-    RtpStreamer rtp("127.0.0.1", 5004, 512, 48000);
+    RtpStreamer rtp("100.72.27.109", 5004, 512, 48000);
+    RtpReceiver rtprecv(5002);
+    // loadEchoCancelModule();
 
+/* MQTT Setup */
+    const int keepalive = 60;
     mosquitto_lib_init();
-
+    
     mosquitto *mosq = mosquitto_new(nullptr, true, nullptr);
-    if (!mosq) {
+    if (! mosq) {
         std::cerr << "Failed to create Mosquitto instance.\n";
         return 1;
     }
-    
-    int keepalive = 60;
     mosquitto_message_callback_set(mosq, on_message);
 
     if (mosquitto_connect(mosq, mqtt_server_ip.c_str(), mqtt_server_port, keepalive) != MOSQ_ERR_SUCCESS) {
@@ -102,37 +57,70 @@ int main(int argc, char *argv[]) {
 
     mosquitto_subscribe(mosq, nullptr, mqtt_topic.c_str(), 0);
     mosquitto_loop_start(mosq);
+/* End of MQTT Setup */
 
+/* Person Tracking Subsystem: */
+    BRAINBOARD_HOST::DeviceController device_controller("/dev/ttyS0", 115200);
+    PersonDetector persondetect("127.0.0.1", "5678", device_controller);
+    persondetect.init();
+/* End of Person Tracking Subsystem: */
 
-    start_mic_capture_stream(wake_word_detector.get_recorder_inst());
+/* Audio Interaction Subsystem: */
+    openwakeword_detector wakeword_detect;
+    wakeword_detect.init("../model/hey_robo.onnx");
+    rtprecv.init();
+    rtprecv.resume();
+/* End of Audio Interaction Subsystem: */
 
-    uint32_t frame_length = wake_word_detector.get_frame_length();
-    int16_t *pcm = (int16_t*)malloc(frame_length * sizeof(int16_t));
-    printf("%d\n", frame_length);
-    if (!pcm) {
-        fprintf(stderr, "Failed to allocate pcm memory.\n");
-        exit(1);
-    }
-    
-    pv_recorder_t *recorder = wake_word_detector.get_recorder_inst();
-    while(!is_interrupted) {
-        get_samples_from_mic(recorder, pcm);
-        int wake_word_detected = wake_word_detector.detect_wakeword(pcm);
-        if(wake_word_detected) {
+    // Start timer for Robo blinking:
+    auto start_time = std::chrono::steady_clock::now(); 
+    while (! is_interrupted) {
+        bool wake_word_detected = wakeword_detect.detect_wakeword();
+        if (wake_word_detected) {
             printf("Wake word detected!\n");
+            device_controller.setColor(BRAINBOARD_HOST::LedID::HEAD, BRAINBOARD_HOST::Color::WHITE);
             rtp.start();
         }
-        if(stop_listening) {
+        if (stop_listening) {
             printf("Stop command received!\n");
             rtp.stop();
             stop_listening = false;
         }
+
+        auto current_time = std::chrono::steady_clock::now();
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+
+        if (elapsed_time > 1000 * 30) {
+            // Every 30 sec Robo blinks.
+            printf("30 second has passed.\n");
+            device_controller.blink(BRAINBOARD_HOST::EyeID::BOTH);
+            // Reset the start time
+            start_time = current_time;
+        }
+
     }
-    free(pcm);
-    pv_recorder_delete(recorder);
-    mosquitto_loop_stop(mosq, true);
-    mosquitto_disconnect(mosq);
-    mosquitto_destroy(mosq);
-    mosquitto_lib_cleanup();
     return 0;
+}
+
+/* Interrupt handler for disabling the sys */
+void interrupt_handler(int _) {
+    (void)_;
+    is_interrupted = true;
+}
+
+void on_message(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message) {
+    printf("Received message on topic %s: %s\n", message->topic, (char *)message->payload);
+    if (!strcmp((char *)message->payload, "Timeout!")) {
+        printf("received Timeout!\n");
+        stop_listening = true;
+    }
+}
+
+void loadEchoCancelModule() {
+    int result = std::system("pactl load-module module-echo-cancel");
+    if (result != 0) {
+        std::cerr << "Failed to load module-echo-cancel." << std::endl;
+    } else {
+        std::cout << "module-echo-cancel loaded successfully." << std::endl;
+    }
 }

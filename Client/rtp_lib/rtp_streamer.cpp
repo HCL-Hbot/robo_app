@@ -66,7 +66,7 @@ RtpStreamer::RtpStreamer(const char *ip_addr, int port, uint32_t sampling_window
 }
 
 void RtpStreamer::start(){
-      // Start playing the pipeline
+    // Start playing the pipeline
     GstStateChangeReturn ret = gst_element_set_state(pipeline, GST_STATE_PLAYING);
     if (ret == GST_STATE_CHANGE_FAILURE) {
         g_printerr("Failed to start the GStreamer pipeline\n");
