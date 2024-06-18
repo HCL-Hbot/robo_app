@@ -2,7 +2,6 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-// #include "wake_word_lib_hooks.h"
 #include <string>
 #include <iostream>
 #include <fstream>
