@@ -56,9 +56,9 @@ int main(int argc, char *argv[]) {
 /* End of MQTT Setup */
 
 /* Person Tracking Subsystem: */
-    BRAINBOARD_HOST::DeviceController device_controller("/dev/ttyS0", 115200);
-    PersonDetector persondetect("127.0.0.1", "5678", device_controller);
-    persondetect.init();
+    // BRAINBOARD_HOST::DeviceController device_controller("/dev/ttyS0", 115200);
+    // PersonDetector persondetect("127.0.0.1", "5678", device_controller);
+    // persondetect.init();
 /* End of Person Tracking Subsystem: */
 
 /* Audio Interaction Subsystem: */
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
         bool wake_word_detected = wakeword_detect.detect_wakeword(audio_samples);
         if (wake_word_detected) {
             printf("Wake word detected!\n");
-            device_controller.setColor(BRAINBOARD_HOST::LedID::HEAD, BRAINBOARD_HOST::Color::WHITE);
+            // device_controller.setColor(BRAINBOARD_HOST::LedID::HEAD, BRAINBOARD_HOST::Color::WHITE);
             rtp.start();
         }
         if (stop_listening) {
@@ -89,17 +89,19 @@ int main(int argc, char *argv[]) {
             stop_listening = false;
         }
 
-        auto current_time = std::chrono::steady_clock::now();
-        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
+        // auto current_time = std::chrono::steady_clock::now();
+        // auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time).count();
 
-        if (elapsed_time > 1000 * 30) {
-            // Every 30 sec Robo blinks.
-            printf("30 second has passed.\n");
-            device_controller.blink(BRAINBOARD_HOST::EyeID::BOTH);
-            // Reset the start time
-            start_time = current_time;
-        }
+        // if (elapsed_time > 1000 * 30) {
+        //     // Every 30 sec Robo blinks.
+        //     printf("30 second has passed.\n");
+        //     device_controller.blink(BRAINBOARD_HOST::EyeID::BOTH);
+        //     // Reset the start time
+        //     start_time = current_time;
+        // }
 
+        audio.get(1000, audio_samples);
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
     return 0;
 }
