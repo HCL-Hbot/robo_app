@@ -1,0 +1,33 @@
+@startuml Healtbot Embedded System Architecture
+
+node "UCONBOARD" as SHIELD {
+    [RPI4] as RPI
+    [RPI Pico (W)] as RPIP
+
+    RPI <-> RPIP : UART
+    RPI <-> RPIP : DB
+}
+
+' Motor Drivers
+[Step-Motor Controller] as MOTOR 
+[Camera] as CAMERA
+[mmWave Rader] as RADAR
+[Display Controller] as DISPLAY
+[LED Controller] as LED
+[Speaker] as SPEAKER
+[Microfoon] as MIC
+[Power Supply] as PSU
+
+' Entity Relationships
+RPI <.left.> [Cloud-Edge HCL-Server] : VPN
+SHIELD -> PSU
+RPIP -down-> MOTOR
+RPIP -down-> RADAR
+RPIP -down-> DISPLAY
+RPIP -down-> LED
+RPIP -down-> CAMERA
+
+RPI -right-> SPEAKER
+RPI -right-> MIC 
+
+@enduml
